@@ -1,11 +1,10 @@
 import streamlit as st
 import sqlite3
-
+import os
 
 # Logo zur Sidebar hinzufügen
 from config import add_logo
 add_logo()
-
 
 # Verbindung zur Datenbank herstellen
 conn = sqlite3.connect('werbetraeger.db', check_same_thread=False)
@@ -50,29 +49,61 @@ def create_tables():
 
 create_tables()
 
-# App-Header mit Firmennamen und Logo
+# CSS für optimiertes Layout
+st.markdown("""
+<style>
+    .block-container {
+        max-width: 1200px;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    .home-text p {
+        line-height: 1.5;
+        max-width: 600px;  /* Textbreite begrenzen */
+    }
+    .custom-header {
+        margin-bottom: 1rem;
+    }
+    .stMarkdown {
+        max-width: 600px;  /* Breiteren Textbereich */
+    }
+</style>
+""", unsafe_allow_html=True)
 
+# App-Header - außerhalb der Spalten
+st.markdown('<h1 class="custom-header">Digital Workflow Tool</h1>', unsafe_allow_html=True)
 
+# Verbesserte Spaltenaufteilung (breiter und weniger hoch)
+col1, col2 = st.columns([2, 1])
 
-# Home-Seiteninhalte
-st.header("Willkommen im Digital Workflow Tool")
+with col1:
+    # Kompakterer Text
+    st.write("""
+    Dieses Tool unterstützt den Aufbauprozess unserer digitalen Werbeträger, indem es den gesamten Workflow abbildet.
+    """)
+    
+    st.subheader("Neue Vermarktungsform: Digitale Säule")
+    
+    # Bulletpoints mit einzelnen Markdown-Anweisungen für separate Zeilen
+    st.markdown("Die neue Vermarktungsform \"Digitale Säule\" unterscheidet sich durch:")
+    
+    st.markdown("• Kann ein-, zwei- oder **dreiseitig** aufgebaut werden")
+    st.markdown("• Überspringt den Genehmigungsschritt des Niederlassungsleiters")
+    
+    st.subheader("Inhalt:")
+    st.markdown("• Prozessdiagramm") 
+    st.markdown("• Dashboard mit Kennzahlen")
+    st.markdown("• Workflow-Navigation")
+    st.markdown("• GeoMap")
 
-st.write("""
-Dieses Tool unterstützt den Aufbauprozess unserer digitalen Werbeträger, indem es den gesamten Workflow von der
-Erfassung neuer Standorte bis zur finalen Genehmigung und Aufbau abbildet.
-
-### Neue Vermarktungsform: Digitale Säule
-
-Die neue Vermarktungsform "Digitale Säule" unterscheidet sich durch folgende Merkmale:
-- Kann ein-, zwei- oder **dreiseitig** aufgebaut werden
-- Überspringt den Genehmigungsschritt des Niederlassungsleiters
-
-### Inhalt:
-- Visualisierung des Workflows für die Digitale Säule (Prozessdiagramm)
-- Dashboard mit wichtigen Kennzahlen
-- Workflow-Bearbeitung für die Genehmigungsschritte (Navigation)
-- GeoMap 
-
-
-""")
-
+with col2:
+    # Bild etwas tiefer platzieren
+    st.write("")
+    st.write("")
+    st.write("")  # Mehr Abstand nach oben
+    
+    image_path = "säule3.png"
+    if os.path.exists(image_path):
+        st.image(image_path, width=300)
+    else:
+        st.error("Bild nicht gefunden: säule3.png")
