@@ -1,0 +1,19 @@
+[theme]
+primaryColor = "#FF6600"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+
+[browser]
+gatherUsageStats = false
+
+[ui]
+hideSidebarNav = false
+
+[server]
+# Standardmäßige Sortierung der Seiten nach Namen
+enableStaticServing = true
+
+[runner]
+# Unverzügliches Neuladen bei Änderungen
+fastReruns = true
