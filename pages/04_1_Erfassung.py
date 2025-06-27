@@ -13,6 +13,10 @@ st.set_page_config(layout="wide", page_title="Standort erfassen")
 conn = sqlite3.connect('werbetraeger.db', check_same_thread=False)
 c = conn.cursor()
 
+# Initialisiere session_state für seiten-Variable
+if 'seiten' not in st.session_state:
+    st.session_state.seiten = "einseitig"
+
 st.title("Standort erfassen")
 
 # Funktion für die Geocodierung
@@ -79,6 +83,61 @@ with st.expander("🔍 Geokoordinaten-Berechner", expanded=False):
     3. Die gefundenen Koordinaten werden automatisch ins Formular übernommen
     """)
 
+# Seiten-Auswahl außerhalb des Formulars (da wir Buttons benutzen)
+st.markdown("### Anzahl der Seiten")
+
+# Zeige die Vermarktungsform-Auswahl außerhalb des Formulars
+vermarktungsform = st.selectbox(
+    "Vermarktungsform",
+    ["Digitale Säule", "City Light Poster", "Großfläche", "Mega-Light", "Ganzsäule"],
+    index=0  # Standardwert ist "Digitale Säule"
+)
+
+# Callback-Funktion für Vermarktungsform-Änderungen
+def update_seiten_options():
+    if vermarktungsform != "Digitale Säule" and st.session_state.seiten == "dreiseitig":
+        st.session_state.seiten = "einseitig"
+
+# Führe die Callback-Funktion aus, wenn sich die Vermarktungsform ändert
+update_seiten_options()
+
+# Vollständig neuer Ansatz mit einer versteckten Spalte
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    ein = st.button("einseitig", key="btn_einseitig", 
+                 use_container_width=True,
+                 type="primary" if st.session_state.seiten == "einseitig" else "secondary")
+    if ein:
+        st.session_state.seiten = "einseitig"
+
+with col2:
+    zwei = st.button("doppelseitig", key="btn_doppelseitig", 
+                  use_container_width=True,
+                  type="primary" if st.session_state.seiten == "doppelseitig" else "secondary")
+    if zwei:
+        st.session_state.seiten = "doppelseitig"
+
+with col3:
+    # Nur anzeigen, wenn Digitale Säule gewählt ist
+    if vermarktungsform == "Digitale Säule":
+        drei = st.button("dreiseitig", key="btn_dreiseitig", 
+                      use_container_width=True,
+                      type="primary" if st.session_state.seiten == "dreiseitig" else "secondary")
+        if drei:
+            st.session_state.seiten = "dreiseitig"
+    else:
+        # Leere Spalte, wenn nicht Digitale Säule
+        st.empty()
+
+# Die aktuelle Auswahl in einer versteckten Variable speichern
+seiten = st.session_state.seiten
+
+# Aktualisieren des Session-States nach Formularvalidierung 
+if vermarktungsform != "Digitale Säule" and seiten == "dreiseitig":
+    seiten = "einseitig"
+    st.session_state.seiten = "einseitig"
+
 # Hauptformular für die Standorterfassung
 with st.form(key='location_form'):
     col1, col2 = st.columns(2)
@@ -106,23 +165,23 @@ with st.form(key='location_form'):
         alte_nummer = ""
         if umruestung == "Umrüstung":
             alte_nummer = st.text_input("Alte Werbeträgernummer")
+            
+        # Anzeige der ausgewählten Vermarktungsform (ohne Auswahl)
+        st.write(f"**Ausgewählte Vermarktungsform:** {vermarktungsform}")
         
-        vermarktungsform = st.selectbox("Vermarktungsform", 
-                                     ["Roadside-Screen", "City-Screen", "MegaVision", "SuperMotion", "Digitale Säule"])
-        
-        seiten_options = ["einseitig", "doppelseitig"]
-        if vermarktungsform == "Digitale Säule":
-            seiten_options.append("dreiseitig")
-        
-        seiten = st.selectbox("Anzahl der Seiten", seiten_options)
+        # Anzeige der ausgewählten Seitenanzahl (ohne Auswahl)
+        st.write(f"**Ausgewählte Seitenanzahl:** {seiten}")
     
-    # Bilder hochladen
+    # Bilder hochladen - außerhalb der Spalten, aber innerhalb des Formulars
     st.write("Bilder in unterschiedlichen Entfernungen je Werbeträgerseite")
-    uploaded_files = st.file_uploader("Bilder hochladen", accept_multiple_files=True, type=['jpg', 'png', 'jpeg'])
+    uploaded_files = st.file_uploader("Bilder hochladen", accept_multiple_files=True, 
+                                      type=['jpg', 'png', 'jpeg'])
     
-    submit = st.form_submit_button("Standort speichern")
+    # Submit-Button richtig platzieren (innerhalb des form-Blocks)
+    submit_button = st.form_submit_button("Standort speichern")
     
-    if submit:
+    # Wichtig: Überprüfe, ob der Button gedrückt wurde
+    if submit_button:
         if not name or not standort or not stadt:
             st.error("Bitte füllen Sie alle Pflichtfelder aus.")
         elif umruestung == "Umrüstung" and not alte_nummer:
@@ -130,10 +189,10 @@ with st.form(key='location_form'):
         elif not uploaded_files:
             st.error("Bitte laden Sie mindestens ein Bild hoch.")
         else:
-                        # Speichern der Daten
+            # Speichern der Daten
             location_id = str(uuid.uuid4())
             
-            # Explizit die Spalten angeben (Beispiel, passe die Spaltennamen an deine Tabelle an)
+            # Explizit die Spalten angeben
             c.execute('''
             INSERT INTO locations (id, erfasser, datum, standort, stadt, lat, lng, 
                                   leistungswert, eigentuemer, umruestung, alte_nummer, 
@@ -145,6 +204,7 @@ with st.form(key='location_form'):
                 seiten, vermarktungsform, "active", "leiter_akquisition", 
                 datetime.now().isoformat()
             ))
+            
             # Workflow-History-Eintrag erstellen
             history_id = str(uuid.uuid4())
             c.execute('''
@@ -175,5 +235,3 @@ st.markdown("""
 - Bei der Digitalen Säule kann auch eine dreiseitige Variante ausgewählt werden
 - Fügen Sie für jede Seite des Werbeträgers mindestens ein Bild hinzu
 """)
-
-# Information zum Geokoordinaten-Berechner nicht mehr in der Sidebar, da jetzt im Expander

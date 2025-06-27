@@ -56,13 +56,17 @@ if selected_forms:
 where_clause = " AND ".join(where_clauses) if where_clauses else ""
 query_suffix = f" WHERE {where_clause}" if where_clause else ""
 
+
 # KPIs berechnen
 c.execute(f'SELECT COUNT(*) FROM locations{query_suffix}', params)
 total = c.fetchone()[0] or 0
 
 # Parameter für weitere Abfragen klonen
 status_params = params.copy()
+
+# In Bearbeitung: Alle mit status='active' außer die, die bereits fertig sind
 if where_clause:
+    # Wichtig: Wir zählen nur die aktiven Einträge, die noch nicht fertig sind
     status_query_suffix = f"{query_suffix} AND status = 'active' AND current_step != 'fertig'"
     rejected_query_suffix = f"{query_suffix} AND status = 'rejected'"
     completed_query_suffix = f"{query_suffix} AND current_step = 'fertig'"
@@ -71,47 +75,132 @@ else:
     rejected_query_suffix = " WHERE status = 'rejected'"
     completed_query_suffix = " WHERE current_step = 'fertig'"
 
+# Aktive Standorte im Prozess (nicht fertig)
 c.execute(f'SELECT COUNT(*) FROM locations{status_query_suffix}', status_params)
 in_progress = c.fetchone()[0] or 0
 
+# Abgelehnte Standorte
 c.execute(f'SELECT COUNT(*) FROM locations{rejected_query_suffix}', status_params)
 rejected = c.fetchone()[0] or 0
 
+# Fertige Standorte
 c.execute(f'SELECT COUNT(*) FROM locations{completed_query_suffix}', status_params)
 completed = c.fetchone()[0] or 0
 
-# KPI-Anzeige
-col1, col2, col3, col4 = st.columns(4)
+# Prüfen, ob die Summe stimmt (es sollte total = in_progress + rejected + completed sein)
+if total != (in_progress + rejected + completed):
+    # Falls nicht, korrigiere in_progress durch Neuberechnung
+    in_progress = total - rejected - completed
+
+# Gesamte durchschnittliche Durchlaufzeit
+c.execute('''
+    SELECT AVG(julianday(h_end.timestamp) - julianday(h_start.timestamp))
+    FROM workflow_history h_start
+    JOIN workflow_history h_end ON h_start.location_id = h_end.location_id
+    WHERE h_start.step = 'erfassung' 
+    AND h_end.step = 'fertig'
+''')
+avg_total_duration = c.fetchone()[0]
+avg_total_days = round(avg_total_duration) if avg_total_duration else 0
+
+# Erfolgsquote berechnen
+success_rate = round((completed / total * 100), 1) if total > 0 else 0
+
+# Alle KPIs in einer Zeile
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 col1.metric("Gesamt", total)
 col2.metric("In Bearbeitung", in_progress)
 col3.metric("Abgelehnt", rejected)
 col4.metric("Abgeschlossen", completed)
+col5.metric("Ø Gesamtdauer", f"{avg_total_days} Tage")
+col6.metric("Erfolgsquote", f"{success_rate}%")
 
-# Prozess Funnel
+# Prozessschritte definieren
+steps = ['erfassung', 'leiter_akquisition', 'niederlassungsleiter', 'baurecht', 'widerspruch', 'ceo', 'bauteam', 'fertig']
+step_names = ['Erfassung', 'Leiter Akq.', 'Niederl.leiter', 'Baurecht', 'Widerspruch', 'CEO', 'Bauteam', 'Fertig']
+
+# Diagnose: Finde Standorte, die "in Bearbeitung" sind, aber keinen gültigen Schritt haben
+diagnose_params = params.copy()
+if where_clause:
+    diagnose_query = f"{query_suffix} AND status = 'active' AND current_step != 'fertig' AND current_step NOT IN ({','.join(['?']*len(steps[:-1]))})"
+else:
+    diagnose_query = f" WHERE status = 'active' AND current_step != 'fertig' AND current_step NOT IN ({','.join(['?']*len(steps[:-1]))})"
+
+diagnose_params.extend(steps[:-1])
+c.execute(f'SELECT COUNT(*), current_step FROM locations{diagnose_query} GROUP BY current_step', diagnose_params)
+missing_steps = c.fetchall()
+
+# Wenn "versteckte" Standorte gefunden wurden, zeige einen Hinweis
+if missing_steps and sum(count for count, _ in missing_steps) > 0:
+    st.warning(f"""
+    **Hinweis:** {sum(count for count, _ in missing_steps)} Standorte sind als "In Bearbeitung" markiert, 
+    haben aber einen nicht standardmäßigen Prozessschritt: 
+    {', '.join([f'"{step}" ({count})' for count, step in missing_steps if step])}
+    """)
+
+# Dann füge den fehlenden Schritt zur Liste hinzu, falls vorhanden
+extra_count = 0
+if missing_steps:
+    for count, step in missing_steps:
+        extra_count += count
+        if step and step not in steps:
+            # Optional: Füge den Schritt zum Funnel hinzu
+            steps.append(step)
+            step_names.append(step.capitalize())  # Einfache Formatierung
+
+# Prozess Funnel mit eindeutiger Datenhandhabung
 st.header("Prozess-Funnel")
 
-steps = ['erfassung', 'leiter_akquisition', 'niederlassungsleiter', 'baurecht', 'ceo', 'bauteam', 'fertig']
-step_names = ['Erfassung', 'Leiter Akq.', 'Niederl.leiter', 'Baurecht', 'CEO', 'Bauteam', 'Fertig']
 counts = []
 
-for step in steps:
+# Zähle nur AKTIVE Standorte in jedem Schritt (ausgenommen "fertig")
+active_step_counts = []
+for step in steps[:-1]:  # Alle außer "fertig"
     step_params = params.copy()
     if where_clause:
-        step_query = f"{query_suffix} AND (current_step = ? OR (status = 'active' AND current_step > ?))"
+        step_query = f"{query_suffix} AND current_step = ? AND status = 'active'"
     else:
-        step_query = f" WHERE (current_step = ? OR (status = 'active' AND current_step > ?))"
+        step_query = f" WHERE current_step = ? AND status = 'active'"
     
-    step_params.extend([step, step])
+    step_params.append(step)
     c.execute(f'SELECT COUNT(*) FROM locations{step_query}', step_params)
-    counts.append(c.fetchone()[0] or 0)
+    active_step_counts.append(c.fetchone()[0] or 0)
+
+# Fertige Standorte (sollte gleich dem KPI "Abgeschlossen" sein)
+active_step_counts.append(completed)  # Verwende direkt den "Abgeschlossen"-Wert für "Fertig"
+
+# Aktualisiere die Counts-Liste
+counts = active_step_counts
 
 funnel_df = pd.DataFrame({
     'Step': step_names,
     'Anzahl': counts
 })
 
+# Verbesserte Funnel-Visualisierung
 fig_funnel = px.funnel(funnel_df, x='Anzahl', y='Step')
+
+# Layout und Farbgebung anpassen
+fig_funnel.update_layout(
+    margin=dict(l=10, r=10, t=10, b=20),
+    height=500,
+    font=dict(size=14),
+    hoverlabel=dict(bgcolor="#F1FAEE", font_size=14),
+    plot_bgcolor='rgba(0,0,0,0)'
+)
+
+# Balkenfarbe anpassen und Hover-Text verbessern
+fig_funnel.update_traces(
+    marker=dict(color="#457B9D", line=dict(width=1, color="#1D3557")),
+    hovertemplate='%{y}: <b>%{x}</b> Standorte<extra></extra>'
+)
+
 st.plotly_chart(fig_funnel, use_container_width=True)
+
+# Hinweis nur anzeigen, wenn tatsächlich ein Unterschied besteht
+funnel_sum = sum(counts[:-1])  # Summe ohne "Fertig"
+if funnel_sum != in_progress:
+    st.caption(f"Hinweis: Die Summe der Standorte im Funnel ({funnel_sum}) weicht vom KPI 'In Bearbeitung' ({in_progress}) ab. Dies kann auf inkonsistente Datenzustände hindeuten.")
 
 # Aufteilung nach Vermarktungsform
 st.header("Aufteilung nach Vermarktungsform")

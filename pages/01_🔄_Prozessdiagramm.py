@@ -66,17 +66,17 @@ for node, attrs in nodes.items():
 # Kanten definieren mit Beschreibungen
 edges = [
     ('A', 'B', {'label': '', 'color': 'gray', 'width': 1}),
-    ('B', 'D', {'label': 'Genehmigung', 'color': '#27AE60', 'width': 2}),
-    ('B', 'X1', {'label': 'Ablehnung', 'color': '#E74C3C', 'width': 2}),
-    ('D', 'F', {'label': 'Bauantrag genehmigt', 'color': '#27AE60', 'width': 2}),
-    ('D', 'E', {'label': 'Bauantrag abgelehnt', 'color': '#E74C3C', 'width': 2}),
-    ('E', 'E1', {'label': 'Ja', 'color': '#F39C12', 'width': 2}),
-    ('E', 'X2', {'label': 'Nein', 'color': '#E74C3C', 'width': 2}),
-    ('E1', 'F', {'label': 'Erfolg', 'color': '#27AE60', 'width': 2}),
-    ('E1', 'X3', {'label': 'Misserfolg', 'color': '#E74C3C', 'width': 2}),
-    ('F', 'G', {'label': 'Genehmigung', 'color': '#27AE60', 'width': 2}),
-    ('F', 'X4', {'label': 'Ablehnung', 'color': '#E74C3C', 'width': 2}),
-    ('G', 'H', {'label': 'Aufbau + Stromanschluss', 'color': '#27AE60', 'width': 2}),
+    ('B', 'D', {'label': 'Genehmigung', 'color': '#27AE60', 'width': 1.5}),
+    ('B', 'X1', {'label': 'Ablehnung', 'color': '#E74C3C', 'width': 1.5}),
+    ('D', 'F', {'label': 'Bauantrag genehmigt', 'color': '#27AE60', 'width': 1.5}),
+    ('D', 'E', {'label': 'Bauantrag abgelehnt', 'color': '#E74C3C', 'width': 1.5}),
+    ('E', 'E1', {'label': 'Ja', 'color': '#F39C12', 'width': 1.5}),
+    ('E', 'X2', {'label': 'Nein', 'color': '#E74C3C', 'width': 1.5}),
+    ('E1', 'F', {'label': 'Erfolg', 'color': '#27AE60', 'width': 1.5}),
+    ('E1', 'X3', {'label': 'Misserfolg', 'color': '#E74C3C', 'width': 1.5}),
+    ('F', 'G', {'label': 'Genehmigung', 'color': '#27AE60', 'width': 1.5}),
+    ('F', 'X4', {'label': 'Ablehnung', 'color': '#E74C3C', 'width': 1.5}),
+    ('G', 'H', {'label': 'Aufbau + Stromanschluss', 'color': '#27AE60', 'width': 1.5}),
     ('B', 'C', {'label': '\n', 'color': '#85C1E9', 'width': 1, 'dash': 'dash'}),
     ('C', 'D', {'label': '\n', 'color': '#85C1E9', 'width': 1, 'dash': 'dash'})
 ]
@@ -104,9 +104,7 @@ pos = {
 # Workflow-Visualisierung erstellen
 fig = go.Figure()
 
-# NEUE PFEILE IMPLEMENTIERUNG: Verbindungen mit Pfeilen statt einfacher Linien
-
-# Für jede Kante einen eigenen Pfeil erstellen mit Pfeilspitze
+# VERBESSERTE PFEILE: Schlichtere, dezentere Pfeilspitzen
 for edge in G.edges():
     source, target = edge
     x0, y0 = pos[source]
@@ -119,7 +117,7 @@ for edge in G.edges():
     
     # Berechne den Abstand, um die Pfeilspitze vor dem Knoten zu platzieren
     node_size = 40 if 'X' in target else 60
-    node_radius = node_size / 150  # Anpassung für die Pfeilspitzenposition
+    node_radius = node_size / 120  # Anpassung für die Pfeilspitzenposition
     
     # Vektor von source zu target
     dx = x1 - x0
@@ -137,7 +135,7 @@ for edge in G.edges():
     arrow_end_x = x1 - nx * node_radius
     arrow_end_y = y1 - ny * node_radius
     
-    # Füge den Pfeil als Linie mit Markierung am Ende hinzu
+    # Füge den Pfeil als Linie hinzu
     fig.add_trace(go.Scatter(
         x=[x0, arrow_end_x],
         y=[y0, arrow_end_y],
@@ -150,18 +148,21 @@ for edge in G.edges():
         hoverinfo='none'
     ))
     
-    # Füge die Pfeilspitze als separates Symbol hinzu, wenn es keine gestrichelte Linie ist
+    # Füge eine schlichtere Pfeilspitze als separates Symbol hinzu (für nicht gestrichelte Linien)
     if dash_style != 'dash':
-        # Pfeilspitze nur für durchgezogene Linien hinzufügen
+        # Berechne den Winkel für die Pfeilspitze
+        angle = math.degrees(math.atan2(dy, dx))
+        
+        # Kleinere, dezentere Pfeilspitze
         fig.add_trace(go.Scatter(
             x=[arrow_end_x],
             y=[arrow_end_y],
             mode='markers',
             marker=dict(
                 symbol='triangle-right',
-                size=10 * width,  # Größe proportional zur Linienbreite
+                size=6 + width,  # Kleinere Größe, proportional zur Linienbreite 
                 color=color,
-                angle=(-90 + (180 * (0.5 * 3.14159 + (0 if dy == 0 else (dy / abs(dy)) * (0 if dx == 0 else math.atan(dx / dy))))) % 360) if dy != 0 else (0 if dx >= 0 else 180),
+                angle=angle,
                 line=dict(width=0)
             ),
             hoverinfo='none'
@@ -182,13 +183,13 @@ for edge in G.edges():
         edge_label_x.append((x0 + x1) / 2)
         edge_label_y.append((y0 + y1) / 2 + 0.1)
 
-# Knoten hinzufügen mit größerer Schrift
+# Knoten hinzufügen mit optimierter Schrift
 fig.add_trace(go.Scatter(
     x=[pos[node][0] for node in G.nodes()],
     y=[pos[node][1] for node in G.nodes()],
     mode='markers+text',
     text=[nodes[node]['label'] for node in G.nodes()],
-    textfont=dict(size=14),  # Größere Schriftgröße (vorher 9)
+    textfont=dict(size=14),
     marker=dict(
         showscale=False,
         color=[nodes[node]['color'] for node in G.nodes()],
@@ -201,31 +202,31 @@ fig.add_trace(go.Scatter(
     hoverinfo="text"
 ))
 
-# Kantentext hinzufügen mit größerer Schrift
+# Kantentext hinzufügen
 if edge_labels:
     fig.add_trace(go.Scatter(
         x=edge_label_x,
         y=edge_label_y,
         mode="text",
         text=edge_labels,
-        textfont=dict(size=14),  # Größere Schriftgröße (vorher 8)
+        textfont=dict(size=14),
         hoverinfo="none"
     ))
 
-# Layout anpassen - Minimale Margins und mehr Höhe
+# Layout anpassen
 fig.update_layout(
     showlegend=False,
     hovermode='closest',
-    margin=dict(b=10, l=0, r=0, t=10, pad=0),  # Minimale Margins
+    margin=dict(b=10, l=0, r=0, t=10, pad=0),
     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
     yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-    height=500,  # Mehr Höhe (vorher 450)
+    height=500,
     plot_bgcolor='rgba(0,0,0,0)',
     autosize=True
 )
 
 # Zoom und Range anpassen, damit alles sichtbar ist
-fig.update_xaxes(range=[-1, 15])  # Größerer Bereich (vorher -0.5, 9)
+fig.update_xaxes(range=[-1, 15])
 fig.update_yaxes(range=[-2.0, 1.3])  
 
 # CSS für engere Margins im Streamlit Container und deutlicheren Titel

@@ -55,7 +55,7 @@ create_tables()
 
 
 # Home-Seiteninhalte
-st.header("Willkommen im Ströer Digital Workflow Tool")
+st.header("Willkommen im Digital Workflow Tool")
 
 st.write("""
 Dieses Tool unterstützt den Aufbauprozess unserer digitalen Werbeträger, indem es den gesamten Workflow von der

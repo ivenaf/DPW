@@ -89,23 +89,22 @@ def load_location_details(location_id):
     
     return location_dict
 
-# Funktion zur Berechnung von wirtschaftlichen Kennzahlen
+# Funktion zur Berechnung von wirtschaftlichen Kennzahlen (mit realistischen Werten)
 def calculate_financial_metrics(location):
     # In einer echten Anwendung würden diese Daten aus einer Datenbank kommen
-    # Hier simulieren wir Beispieldaten basierend auf dem Standort
+    # Hier simulieren wir realistische Beispieldaten basierend auf dem Standort
     
     # Zufällige, aber konsistente Daten für einen gegebenen Standort generieren
     import hashlib
     
     # Hash aus ID generieren für konsistente "Zufallszahlen"
-    # Modifizieren wir den Seed-Wert, damit er innerhalb des gültigen Bereichs liegt
     hash_obj = hashlib.md5(location['id'].encode())
-    # Nur die ersten 8 Zeichen des Hex-Digest nehmen, um einen kleineren Wert zu erhalten
     hash_value = int(hash_obj.hexdigest()[:8], 16) 
-    np.random.seed(hash_value % (2**32 - 1))  # Begrenzung auf den gültigen Bereich
+    np.random.seed(hash_value % (2**32 - 1))
     
-    # Wirtschaftliche Kennzahlen berechnen (simuliert)
-    investment = np.random.randint(45000, 75000)  # Investitionen für Digitale Säule
+    # Realistische Wirtschaftliche Kennzahlen berechnen
+    # Investitionskosten für eine Digitale Säule: 20.000-35.000€
+    investment = np.random.randint(20000, 35000)
     
     # Mehr Seiten = mehr Einnahmen
     sides = 1
@@ -115,26 +114,27 @@ def calculate_financial_metrics(location):
         sides = 3
         
     # Jahreseinnahmen basierend auf Standort und Seiten
+    # Realistische jährliche Einnahmen pro Seite: 2.000-4.000€
     revenue_factor = 1.0
     if location['eigentuemer'] == 'Stadt':
-        revenue_factor = 1.2  # Städtische Standorte haben bessere Performance
+        revenue_factor = 1.15  # Städtische Standorte haben bessere Performance
     
     leistungswert = float(location.get('leistungswert', 0) or 0)
     if leistungswert > 0:
-        revenue_factor *= (1 + leistungswert/100)
+        revenue_factor *= (1 + leistungswert/200)  # Reduzierter Einfluss
     
-    annual_revenue = np.random.randint(15000, 25000) * sides * revenue_factor
+    annual_revenue = np.random.randint(2000, 4000) * sides * revenue_factor
     
-    # Betriebskosten
-    operating_costs = annual_revenue * np.random.uniform(0.15, 0.25)
+    # Betriebskosten: 40-50% der Einnahmen
+    operating_costs = annual_revenue * np.random.uniform(0.4, 0.5)
     
     # Gewinn
     annual_profit = annual_revenue - operating_costs
     
-    # ROI berechnen
+    # ROI berechnen: Realistischer Bereich 5-10%
     roi = (annual_profit / investment) * 100
     
-    # Amortisationszeit in Jahren
+    # Amortisationszeit in Jahren: Typisch 8-12 Jahre
     payback_period = investment / annual_profit
     
     # NPV über 10 Jahre mit 8% Diskontierungsrate
@@ -147,18 +147,14 @@ def calculate_financial_metrics(location):
     
     npv = sum(cf / (1 + discount_rate) ** i for i, cf in enumerate(cash_flows))
     
-    # Strategischer Wert (1-10)
-    strategic_value = np.random.randint(6, 11)
-    
     return {
-        'investment': round(investment),
-        'annual_revenue': round(annual_revenue),
-        'operating_costs': round(operating_costs),
-        'annual_profit': round(annual_profit),
-        'roi': round(roi, 2),
-        'payback_period': round(payback_period, 2),
-        'npv': round(npv),
-        'strategic_value': strategic_value
+        'investment': investment,
+        'annual_revenue': annual_revenue,
+        'operating_costs': operating_costs,
+        'annual_profit': annual_profit,
+        'roi': roi,
+        'payback_period': payback_period,
+        'npv': npv
     }
 
 # Funktion zum Verarbeiten der CEO-Entscheidung
@@ -171,7 +167,7 @@ def process_ceo_decision(location_id, approve, reason, financial_metrics):
         next_step = "bauteam"
         status = "active"
         action = "approved"
-        message = f"Standort vom CEO genehmigt. Wirtschaftliche Kennzahlen: ROI {financial_metrics['roi']}%, Amortisation {financial_metrics['payback_period']} Jahre."
+        message = f"Standort vom CEO genehmigt. Wirtschaftliche Kennzahlen: ROI {financial_metrics['roi']:.1f}%, Amortisation {financial_metrics['payback_period']:.1f} Jahre."
     else:
         # Ablehnen: Prozess beenden
         next_step = "abgelehnt"
@@ -281,52 +277,75 @@ else:
             if location:
                 financial = calculate_financial_metrics(location)
                 
-                # Investition und Erträge
-                col1, col2 = st.columns(2)
+                # Definition von Tooltip-Texten für KPIs
+                kpi_tooltips = {
+                    'investment': "Die Gesamtkosten für die Installation der Digitalen Säule inkl. Fundament, Hardware, Display und Montage.",
+                    'annual_revenue': "Die erwarteten jährlichen Bruttoeinnahmen aus Werbebuchungen, basierend auf Standortqualität und Sichtkontakten.",
+                    'operating_costs': "Jährliche Kosten für Stromverbrauch, Wartung, Versicherung und Standortmiete.",
+                    'annual_profit': "Jährliche Einnahmen abzüglich der Betriebskosten (ohne Abschreibung der Investition).",
+                    'roi': "Return on Investment: Jährlicher Gewinn geteilt durch die Investition, ausgedrückt als Prozentsatz. Zeigt die jährliche Rendite.",
+                    'payback_period': "Die Zeit in Jahren, bis die anfängliche Investition durch die Gewinne zurückgezahlt ist.",
+                    'npv': "Net Present Value: Der Barwert aller zukünftigen Cashflows über 10 Jahre, abzüglich der Anfangsinvestition (Diskontierungsrate 8%)."
+                }
                 
-                with col1:
-                    st.markdown("##### Investition & Ertrag")
-                    st.metric("Investitionskosten", f"{financial['investment']:,} €")
-                    st.metric("Jährliche Einnahmen", f"{financial['annual_revenue']:,} €")
-                    st.metric("Jährliche Betriebskosten", f"{financial['operating_costs']:,} €")
-                    st.metric("Jährlicher Gewinn", f"{financial['annual_profit']:,} €")
+                # Erstellen des HTML für die saubere Tabelle mit korrektem Formatting
+                html_table = """
+                <table style="width:100%; border-collapse: collapse;">
+                    <tr>
+                        <th style="text-align:left; padding:10px; border-bottom:1px solid #ddd; background-color:#f5f5f5;">Kennzahl</th>
+                        <th style="text-align:right; padding:10px; border-bottom:1px solid #ddd; background-color:#f5f5f5;">Wert</th>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; padding:10px; border-bottom:1px solid #ddd;">Investitionskosten <span class='tooltip' title='{0}'>ℹ️</span></td>
+                        <td style="text-align:right; padding:10px; border-bottom:1px solid #ddd;">{1:,.0f} €</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; padding:10px; border-bottom:1px solid #ddd;">Jährliche Einnahmen <span class='tooltip' title='{2}'>ℹ️</span></td>
+                        <td style="text-align:right; padding:10px; border-bottom:1px solid #ddd;">{3:,.0f} €</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; padding:10px; border-bottom:1px solid #ddd;">Jährliche Betriebskosten <span class='tooltip' title='{4}'>ℹ️</span></td>
+                        <td style="text-align:right; padding:10px; border-bottom:1px solid #ddd;">{5:,.0f} €</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; padding:10px; border-bottom:1px solid #ddd;">Jährlicher Gewinn <span class='tooltip' title='{6}'>ℹ️</span></td>
+                        <td style="text-align:right; padding:10px; border-bottom:1px solid #ddd;">{7:,.0f} €</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; padding:10px; border-bottom:1px solid #ddd;">ROI <span class='tooltip' title='{8}'>ℹ️</span></td>
+                        <td style="text-align:right; padding:10px; border-bottom:1px solid #ddd;">{9:.1f} %</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; padding:10px; border-bottom:1px solid #ddd;">Amortisationszeit <span class='tooltip' title='{10}'>ℹ️</span></td>
+                        <td style="text-align:right; padding:10px; border-bottom:1px solid #ddd;">{11:.1f} Jahre</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left; padding:10px; border-bottom:1px solid #ddd;">Kapitalwert (NPV) <span class='tooltip' title='{12}'>ℹ️</span></td>
+                        <td style="text-align:right; padding:10px; border-bottom:1px solid #ddd;">{13:,.0f} €</td>
+                    </tr>
+                </table>
+                """.format(
+                    kpi_tooltips['investment'],
+                    financial['investment'],
+                    kpi_tooltips['annual_revenue'],
+                    financial['annual_revenue'],
+                    kpi_tooltips['operating_costs'],
+                    financial['operating_costs'],
+                    kpi_tooltips['annual_profit'],
+                    financial['annual_profit'],
+                    kpi_tooltips['roi'],
+                    financial['roi'],
+                    kpi_tooltips['payback_period'],
+                    financial['payback_period'],
+                    kpi_tooltips['npv'],
+                    financial['npv']
+                )
                 
-                with col2:
-                    st.markdown("##### Rentabilität")
-                    
-                    # ROI-Anzeige - korrigierte Version für die delta_color
-                    if financial['roi'] > 25:
-                        roi_delta = f"+{financial['roi']-25}% über Ziel"
-                        delta_color = "normal"  # grün (positiv)
-                    elif financial['roi'] < 15:
-                        roi_delta = f"{financial['roi']-15}% unter Ziel"
-                        delta_color = "inverse"  # rot (negativ)
-                    else:
-                        roi_delta = None
-                        delta_color = "off"
-                        
-                    st.metric("Return on Investment (ROI)", f"{financial['roi']} %", delta=roi_delta, delta_color=delta_color)
-                    
-                    # Amortisationszeit - korrigierte Version
-                    if financial['payback_period'] < 3:
-                        payback_delta = f"{3-financial['payback_period']:.1f} Jahre schneller"
-                        payback_color = "normal"  # grün (positiv)
-                    elif financial['payback_period'] > 5:
-                        payback_delta = f"{financial['payback_period']-5:.1f} Jahre langsamer"
-                        payback_color = "inverse"  # rot (negativ)
-                    else:
-                        payback_delta = None
-                        payback_color = "off"
-                        
-                    st.metric("Amortisationszeit", f"{financial['payback_period']} Jahre", delta=payback_delta, delta_color=payback_color)
-                    st.metric("Kapitalwert (NPV)", f"{financial['npv']:,} €")
-                    
-                    # Strategischer Wert als Fortschrittsbalken
-                    st.markdown(f"**Strategischer Wert:** {financial['strategic_value']}/10")
-                    st.progress(financial['strategic_value']/10)
+                # Anzeigen der Tabelle
+                st.markdown(html_table, unsafe_allow_html=True)
                 
                 # Cashflow-Modell für 5 Jahre
-                st.subheader("5-Jahres Cashflow-Projektion")
+                st.markdown("### 5-Jahres Cashflow-Projektion")
                 
                 years = list(range(6))  # Jahre 0-5
                 cashflows = [-financial['investment']]  # Jahr 0 ist die Investition
@@ -351,52 +370,42 @@ else:
                 # Chart anzeigen
                 st.bar_chart(cashflow_df.set_index('Jahr')[['Jährlicher Cashflow', 'Kumulierter Cashflow']])
                 
-                # Empfehlung basierend auf den Kennzahlen
-                st.subheader("Automatische Bewertung")
+                # Empfehlung basierend auf den Kennzahlen (mit realistischeren Kriterien)
+                st.markdown("### Automatische Bewertung")
                 
                 score = 0
-                max_score = 5
+                max_score = 4  # Strategischer Wert wurde entfernt
                 criteria = []
                 
-                # ROI-Kriterium
-                if financial['roi'] > 25:
+                # ROI-Kriterium (realistischere Werte)
+                if financial['roi'] > 8:
                     score += 1
-                    criteria.append("✅ ROI > 25%")
-                elif financial['roi'] > 15:
+                    criteria.append("✅ ROI > 8%")
+                elif financial['roi'] > 5:
                     score += 0.5
-                    criteria.append("⚠️ ROI zwischen 15% und 25%")
+                    criteria.append("⚠️ ROI zwischen 5% und 8%")
                 else:
-                    criteria.append("❌ ROI < 15%")
+                    criteria.append("❌ ROI < 5%")
                 
-                # Amortisationszeit-Kriterium
-                if financial['payback_period'] < 3:
+                # Amortisationszeit-Kriterium (realistischere Werte)
+                if financial['payback_period'] < 8:
                     score += 1
-                    criteria.append("✅ Amortisation < 3 Jahre")
-                elif financial['payback_period'] < 5:
+                    criteria.append("✅ Amortisation < 8 Jahre")
+                elif financial['payback_period'] < 10:
                     score += 0.5
-                    criteria.append("⚠️ Amortisation zwischen 3 und 5 Jahren")
+                    criteria.append("⚠️ Amortisation zwischen 8 und 10 Jahren")
                 else:
-                    criteria.append("❌ Amortisation > 5 Jahre")
+                    criteria.append("❌ Amortisation > 10 Jahre")
                     
-                # NPV-Kriterium
-                if financial['npv'] > 100000:
+                # NPV-Kriterium (realistischere Werte)
+                if financial['npv'] > 15000:
                     score += 1
-                    criteria.append("✅ NPV > 100.000 €")
-                elif financial['npv'] > 50000:
+                    criteria.append("✅ NPV > 15.000 €")
+                elif financial['npv'] > 5000:
                     score += 0.5
-                    criteria.append("⚠️ NPV zwischen 50.000 € und 100.000 €")
+                    criteria.append("⚠️ NPV zwischen 5.000 € und 15.000 €")
                 else:
-                    criteria.append("❌ NPV < 50.000 €")
-                    
-                # Strategischer Wert-Kriterium
-                if financial['strategic_value'] >= 9:
-                    score += 1
-                    criteria.append("✅ Hoher strategischer Wert (9-10)")
-                elif financial['strategic_value'] >= 7:
-                    score += 0.5
-                    criteria.append("⚠️ Mittlerer strategischer Wert (7-8)")
-                else:
-                    criteria.append("❌ Niedriger strategischer Wert (<7)")
+                    criteria.append("❌ NPV < 5.000 €")
                 
                 # Leistungswert-Kriterium
                 leistungswert = float(location.get('leistungswert', 0) or 0)
@@ -412,13 +421,13 @@ else:
                 # Gesamtbewertung anzeigen
                 score_percentage = (score / max_score) * 100
                 
-                st.markdown(f"##### Bewertung: {score}/{max_score} Punkte ({score_percentage:.1f}%)")
+                st.markdown(f"#### Bewertung: {score}/{max_score} Punkte ({score_percentage:.1f}%)")
                 st.progress(score / max_score)
                 
                 # Empfehlungstext
-                if score >= 4:
+                if score >= 3:
                     st.success("**Empfehlung: Genehmigen** - Der Standort zeigt eine sehr gute wirtschaftliche Perspektive.")
-                elif score >= 2.5:
+                elif score >= 2:
                     st.warning("**Empfehlung: Mit Vorbehalt genehmigen** - Der Standort zeigt eine akzeptable wirtschaftliche Perspektive.")
                 else:
                     st.error("**Empfehlung: Ablehnen** - Der Standort erfüllt die wirtschaftlichen Anforderungen nicht ausreichend.")
@@ -490,7 +499,6 @@ else:
                 if decision == "Nein, ablehnen":
                     reason_options = [
                         "Wirtschaftlichkeit nicht ausreichend",
-                        "Strategischer Wert zu gering",
                         "Bessere Alternativstandorte vorhanden",
                         "Zu lange Amortisationszeit",
                         "Zu hohe Investitionskosten",
@@ -531,13 +539,11 @@ st.sidebar.markdown("""
 In diesem Schritt entscheidet der CEO über die finale Freigabe des Standorts basierend auf:
 
 1. Wirtschaftlicher Betrachtung (ROI, Amortisationszeit)
-2. Strategischem Wert des Standorts
-3. Baurechtlicher Genehmigung
+2. Baurechtlicher Genehmigung
 
 **Besonderheiten der Digitalen Säule:**
 - Höhere Investition im Vergleich zu klassischen Werbeträgern
 - Längerer wirtschaftlicher Betrachtungszeitraum
-- Strategische Bedeutung des digitalen Netzwerks
 
 **Bei Genehmigung:** Weiterleitung an das Bauteam zur Umsetzung
 **Bei Ablehnung:** Ende des Workflows
@@ -553,6 +559,37 @@ st.sidebar.markdown("""
 6. ➡️ Bauteam
 7. ➡️ Fertigstellung
 """)
+
+# CSS für Tooltips verbessern
+st.markdown("""
+<style>
+/* Basis-Tooltip-Stil */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    margin-left: 5px;
+}
+
+.tooltip:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+    top: -45px;
+    min-width: 250px;
+    max-width: 300px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background-color: #333;
+    color: white;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    white-space: normal;
+    line-height: 1.4;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Verbindung schließen am Ende
 conn.close()

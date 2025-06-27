@@ -82,4 +82,5 @@ def show_agraph_workflow():
         Node(id="H", label="Fertigstellung", size=25),
         Node(id="X1", label="Prozess unterbrochen", size=20, color="lightgray"),
         Node(id="X2", label="Prozess unterbrochen", size=20, color="lightgray"),
-        Node(id="X3", label
+        Node(id="X3", label)
+    ]
