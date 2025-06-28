@@ -69,6 +69,7 @@ else:
         }
     }
 
+
     st.pydeck_chart(pdk.Deck(
         map_style='mapbox://styles/mapbox/light-v9',
         initial_view_state=view_state,
