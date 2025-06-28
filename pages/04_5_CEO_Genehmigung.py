@@ -215,8 +215,8 @@ else:
     st.write(f"**{len(df)} Standorte** warten auf Ihre Genehmigung.")
     
     # Vereinfachte Tabelle für die Übersicht
-    display_df = df[['standort', 'stadt', 'eigentuemer', 'vermarktungsform', 'created_at']].copy()
-    display_df.columns = ['Standort', 'Stadt', 'Eigentümer', 'Vermarktungsform', 'Erfasst am']
+    display_df = df[['id', 'standort', 'stadt', 'eigentuemer', 'vermarktungsform', 'created_at']].copy()
+    display_df.columns = ['ID', 'Standort', 'Stadt', 'Eigentümer', 'Vermarktungsform', 'Erfasst am']
     
     # Datum formatieren
     display_df['Erfasst am'] = pd.to_datetime(display_df['Erfasst am']).dt.strftime('%d.%m.%Y')

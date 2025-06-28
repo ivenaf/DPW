@@ -191,8 +191,8 @@ else:
     st.write(f"**{len(df)} Standorte** in der Bauphase.")
     
     # Vereinfachte Tabelle für die Übersicht
-    display_df = df[['standort', 'stadt', 'vermarktungsform', 'seiten', 'created_at']].copy()
-    display_df.columns = ['Standort', 'Stadt', 'Vermarktungsform', 'Seiten', 'Erfasst am']
+    display_df = df[['id', 'standort', 'stadt', 'vermarktungsform', 'seiten', 'created_at']].copy()
+    display_df.columns = ['ID', 'Standort', 'Stadt', 'Vermarktungsform', 'Seiten', 'Erfasst am']
     
     # Datum formatieren
     display_df['Erfasst am'] = pd.to_datetime(display_df['Erfasst am']).dt.strftime('%d.%m.%Y')

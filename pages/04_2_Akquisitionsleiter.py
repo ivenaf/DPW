@@ -70,7 +70,7 @@ def load_location_details(location_id):
         'seiten': location[11],
         'vermarktungsform': location[12],
         'status': location[13],
-        'current_step': location[14],  # Name im Dictionary angepasst
+        'current_step': location[14],
         'created_at': location[15]
     }
 
@@ -78,17 +78,21 @@ def load_location_details(location_id):
 def process_location(location_id, approve, reason):
     now = datetime.now().isoformat()
     history_id = str(uuid.uuid4())
+    location = load_location_details(location_id)
     
     if approve:
         # Genehmigen: Bei der Digitalen Säule überspringen wir den Niederlassungsleiter
-        next_step = "baurecht"
+        if location['vermarktungsform'] == "Digitale Säule":
+            next_step = "baurecht"
+        else:
+            next_step = "niederlassungsleiter"
         status = "active"
         action = "approved"
         message = "Standort genehmigt"
     else:
-        # Ablehnen
+        # Ablehnung
         next_step = "abgelehnt"
-        status = "rejected"
+        status = "abgelehnt"
         action = "rejected"
         message = f"Standort abgelehnt: {reason}"
     
@@ -132,8 +136,8 @@ else:
     st.write(f"**{len(df)} Standorte** warten auf Ihre Genehmigung.")
     
     # Vereinfachte Tabelle für die Übersicht
-    display_df = df[['erfasser', 'datum', 'standort', 'stadt', 'vermarktungsform']].copy()
-    display_df.columns = ['Erfasser', 'Datum', 'Standort', 'Stadt', 'Vermarktungsform']
+    display_df = df[['id', 'erfasser', 'datum', 'standort', 'stadt', 'vermarktungsform']].copy()
+    display_df.columns = ['ID','Erfasser', 'Datum', 'Standort', 'Stadt', 'Vermarktungsform']
     
     st.dataframe(display_df, hide_index=True)
     
@@ -222,9 +226,12 @@ else:
                     
                     if success:
                         if is_approve:
-                            st.success(f"Standort wurde genehmigt und wird direkt an das Baurecht weitergeleitet.")
+                            if location['vermarktungsform'] == "Digitale Säule":
+                                st.success("Standort wurde genehmigt und wird direkt an das Baurecht weitergeleitet.")
+                            else:
+                                st.success("Standort wurde genehmigt und wird an den Niederlassungsleiter weitergeleitet.")
                         else:
-                            st.success(f"Standort wurde abgelehnt. Der Erfasser wird informiert.")
+                            st.success("Standort wurde abgelehnt. Der Erfasser wird informiert.")
                         
                         # Aktualisieren der Standortliste
                         st.rerun()

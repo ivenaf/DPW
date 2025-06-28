@@ -18,7 +18,7 @@ available_columns = get_available_columns()
 
 # Seiteneinstellungen
 st.set_page_config(layout="wide", page_title="Dashboard", page_icon="📊")
-st.title("Dashboard - Kennzahlen & Reporting")
+st.title("Dashboard (Link to SAC Dashboard)")
 
 # Zeitraumfilter
 st.sidebar.header("Zeitraumfilter")

@@ -7,7 +7,7 @@ import math  # Math-Modul für die Pfeilrichtungsberechnung
 st.set_page_config(layout="wide")
 
 # Titel mit verbesserter Sichtbarkeit
-st.markdown("<h3 style='text-align: center; color: #1E3D59; margin-bottom: 20px;'></h3>", unsafe_allow_html=True) # needed to not have the title at the very top
+st.markdown("<h3 style='text-align: center; color: #1E3D59; margin-bottom: 20px;'></h3>", unsafe_allow_html=True)
 st.subheader("Workflow der Digitalen Säule")
 st.write("""Die Digitale Säule unterscheidet sich von anderen Vermarktungsformen:
 1. **Seitenanzahl**: Kann auch dreiseitig erfasst werden (nicht nur ein- oder doppelseitig)
@@ -25,7 +25,7 @@ nodes = {
           'desc': 'Bewertet und genehmigt/lehnt ab',
           'color': '#D6EAF8', 'border': '#2E86C1'},
     'C': {'label': 'Niederlassungsleiter (übersprungen)', 
-          'desc': 'Dieser Schritt wird bei der Digitalen Säule übersprungen',
+          'desc': 'Dieser Schritt wird bei der Digitalen Säule übersprungen oder genehmigt/abgelehnt',
           'color': '#EBF5FB', 'border': '#85C1E9', 'dash': 'dash'},
     'D': {'label': 'Baurecht', 
           'desc': 'Bauanträge werden bei der Stadt eingereicht',
@@ -45,6 +45,9 @@ nodes = {
     'H': {'label': 'Fertigstellung', 
           'desc': 'Werbeträger ist aufgebaut und bereit für die Vermarktung',
           'color': '#D4EFDF', 'border': '#27AE60'},
+    'X0': {'label': 'Prozess unterbrochen', 
+           'desc': 'Prozessabbruch nach Ablehnung durch Niederlassungsleiter',
+           'color': '#FADBD8', 'border': '#E74C3C'},
     'X1': {'label': 'Prozess unterbrochen', 
            'desc': 'Prozessabbruch nach Ablehnung durch Leiter Akquisitionsmanagement',
            'color': '#FADBD8', 'border': '#E74C3C'},
@@ -68,6 +71,9 @@ edges = [
     ('A', 'B', {'label': '', 'color': 'gray', 'width': 1}),
     ('B', 'D', {'label': 'Genehmigung', 'color': '#27AE60', 'width': 1.5}),
     ('B', 'X1', {'label': 'Ablehnung', 'color': '#E74C3C', 'width': 1.5}),
+    ('C', 'D', {'label': '\n', 'color': '#85C1E9', 'width': 1, 'dash': 'dash'}),
+    ('B', 'C', {'label': '\n', 'color': '#85C1E9', 'width': 1, 'dash': 'dash'}),
+    ('C', 'X0', {'label': 'Ablehnung', 'color': '#E74C3C', 'width': 1.5}),
     ('D', 'F', {'label': 'Bauantrag genehmigt', 'color': '#27AE60', 'width': 1.5}),
     ('D', 'E', {'label': 'Bauantrag abgelehnt', 'color': '#E74C3C', 'width': 1.5}),
     ('E', 'E1', {'label': 'Ja', 'color': '#F39C12', 'width': 1.5}),
@@ -77,8 +83,6 @@ edges = [
     ('F', 'G', {'label': 'Genehmigung', 'color': '#27AE60', 'width': 1.5}),
     ('F', 'X4', {'label': 'Ablehnung', 'color': '#E74C3C', 'width': 1.5}),
     ('G', 'H', {'label': 'Aufbau + Stromanschluss', 'color': '#27AE60', 'width': 1.5}),
-    ('B', 'C', {'label': '\n', 'color': '#85C1E9', 'width': 1, 'dash': 'dash'}),
-    ('C', 'D', {'label': '\n', 'color': '#85C1E9', 'width': 1, 'dash': 'dash'})
 ]
 
 for source, target, attrs in edges:
@@ -87,18 +91,19 @@ for source, target, attrs in edges:
 # Layout erstellen - Mehr Abstand zwischen den Schritten
 pos = {
     'A': [0, 0],
-    'B': [2.0, 0],       # Mehr Abstand (vorher 1.2)
-    'C': [3.5, 0.8],     # Mehr Abstand (vorher 2.1)
-    'D': [5.0, 0],       # Mehr Abstand (vorher 3.0)
-    'E': [7.0, -0.8],    # Mehr Abstand (vorher 4.2)
-    'E1': [8.5, -1.2],   # Mehr Abstand (vorher 5.1)
-    'F': [10.0, 0],      # Mehr Abstand (vorher 6.0)
-    'G': [12.0, 0],      # Mehr Abstand (vorher 7.2)
-    'H': [14.0, 0],      # Mehr Abstand (vorher 8.4)
-    'X1': [3.5, -0.8],   # Mehr Abstand (entsprechend angepasst)
-    'X2': [7.0, -1.6],   # Mehr Abstand (entsprechend angepasst)
-    'X3': [10.0, -1.2],  # Mehr Abstand (entsprechend angepasst)
-    'X4': [12.0, -0.8],  # Mehr Abstand (entsprechend angepasst)
+    'B': [2.0, 0],
+    'C': [3.5, 0.8],      # Niederlassungsleiter
+    'X0': [6.0, 0.8],     # Prozess unterbrochen (direkt rechts auf gleicher Höhe)
+    'D': [5.0, 0],
+    'E': [7.0, -0.8],
+    'E1': [8.5, -1.2],
+    'F': [10.0, 0],
+    'G': [12.0, 0],
+    'H': [14.0, 0],
+    'X1': [3.5, -1.6],
+    'X2': [7.0, -1.6],
+    'X3': [10.0, -1.2],
+    'X4': [12.0, -0.8],
 }
 
 # Workflow-Visualisierung erstellen
@@ -125,7 +130,7 @@ for edge in G.edges():
     dist = (dx**2 + dy**2)**0.5
     
     # Normalisierte Richtung
-    if dist > 0:  # Vermeide Division durch Null
+    if dist > 0:
         nx = dx / dist
         ny = dy / dist
     else:
@@ -150,17 +155,14 @@ for edge in G.edges():
     
     # Füge eine schlichtere Pfeilspitze als separates Symbol hinzu (für nicht gestrichelte Linien)
     if dash_style != 'dash':
-        # Berechne den Winkel für die Pfeilspitze
         angle = math.degrees(math.atan2(dy, dx))
-        
-        # Kleinere, dezentere Pfeilspitze
         fig.add_trace(go.Scatter(
             x=[arrow_end_x],
             y=[arrow_end_y],
             mode='markers',
             marker=dict(
                 symbol='triangle-right',
-                size=6 + width,  # Kleinere Größe, proportional zur Linienbreite 
+                size=6 + width,
                 color=color,
                 angle=angle,
                 line=dict(width=0)

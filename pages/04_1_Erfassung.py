@@ -89,7 +89,7 @@ st.markdown("### Anzahl der Seiten")
 # Zeige die Vermarktungsform-Auswahl außerhalb des Formulars
 vermarktungsform = st.selectbox(
     "Vermarktungsform",
-    ["Digitale Säule", "City Light Poster", "Großfläche", "Mega-Light", "Ganzsäule"],
+    ["Digitale Säule", "Roadside-Screen", "City-Screen", "MegaVision", "SuperMotion"],
     index=0  # Standardwert ist "Digitale Säule"
 )
 
@@ -176,7 +176,7 @@ with st.form(key='location_form'):
     st.write("Bilder in unterschiedlichen Entfernungen je Werbeträgerseite")
     uploaded_files = st.file_uploader("Bilder hochladen", accept_multiple_files=True, 
                                       type=['jpg', 'png', 'jpeg'])
-    
+
     # Submit-Button richtig platzieren (innerhalb des form-Blocks)
     submit_button = st.form_submit_button("Standort speichern")
     
@@ -189,10 +189,9 @@ with st.form(key='location_form'):
         elif not uploaded_files:
             st.error("Bitte laden Sie mindestens ein Bild hoch.")
         else:
-            # Speichern der Daten
             location_id = str(uuid.uuid4())
-            
-            # Explizit die Spalten angeben
+            # Immer zuerst zum Leiter Akquisition!
+            next_step = "leiter_akquisition"
             c.execute('''
             INSERT INTO locations (id, erfasser, datum, standort, stadt, lat, lng, 
                                   leistungswert, eigentuemer, umruestung, alte_nummer, 
@@ -201,7 +200,7 @@ with st.form(key='location_form'):
             ''', (
                 location_id, name, datum.isoformat(), standort, stadt, lat, lng,
                 leistungswert, eigentuemer, umruestung == "Umrüstung", alte_nummer,
-                seiten, vermarktungsform, "active", "leiter_akquisition", 
+                seiten, vermarktungsform, "active", next_step, 
                 datetime.now().isoformat()
             ))
             
@@ -215,7 +214,7 @@ with st.form(key='location_form'):
             ))
             
             conn.commit()
-            st.success("Standort erfolgreich gespeichert. Leiter Akquisitionsmanagement wird benachrichtigt.")
+            st.success(f"Standort erfolgreich gespeichert! Die Standort-ID lautet: {location_id}. Der nächste Workflow-Schritt wurde eingeleitet.")
             
             # Session-State zurücksetzen
             if 'calculated_lat' in st.session_state:

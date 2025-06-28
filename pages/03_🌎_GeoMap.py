@@ -25,6 +25,8 @@ step_colors = {
     'rejected': [128, 128, 128]            # Grau für abgelehnte
 }
 
+
+
 # Filter für Ansicht
 st.sidebar.header("Filter")
 
@@ -79,6 +81,8 @@ else:
     # Daten für die Karte vorbereiten
     df = pd.DataFrame(locations, columns=['id', 'standort', 'stadt', 'lat', 'lng', 'status', 'current_step', 'vermarktungsform'])
     
+    
+
     # Farbzuweisung basierend auf current_step oder status
     df['color'] = df.apply(
         lambda row: step_colors.get(row['current_step'], step_colors.get('rejected')) if row['status'] != 'rejected' else step_colors['rejected'], 
@@ -152,25 +156,4 @@ else:
         tooltip=tooltip
     ))
 
-    # Detaillierte Tabelle unter der Karte anzeigen
-    st.subheader("Standortdetails")
     
-    # Formatiere die Tabelle für bessere Lesbarkeit
-    display_df = df[['id', 'standort', 'stadt', 'vermarktungsform', 'current_step', 'status']]
-    display_df = display_df.rename(columns={
-        'id': 'ID', 
-        'standort': 'Standort', 
-        'stadt': 'Stadt', 
-        'vermarktungsform': 'Vermarktungsform', 
-        'current_step': 'Bearbeitungsschritt', 
-        'status': 'Status'
-    })
-    
-    # Formatierung für Status und Bearbeitungsschritt
-    display_df['Status'] = display_df['Status'].map({'active': 'Aktiv', 'rejected': 'Abgelehnt'})
-    display_df['Bearbeitungsschritt'] = display_df['Bearbeitungsschritt'].apply(lambda x: x.capitalize())
-    
-    st.dataframe(display_df, height=400)
-
-# Datenbankverbindung schließen
-conn.close()

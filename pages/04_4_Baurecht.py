@@ -189,8 +189,8 @@ else:
     st.write(f"**{len(df)} Standorte** im Baurechtsschritt.")
     
     # Vereinfachte Tabelle für die Übersicht
-    display_df = df[['standort', 'stadt', 'eigentuemer', 'vermarktungsform', 'created_at']].copy()
-    display_df.columns = ['Standort', 'Stadt', 'Eigentümer', 'Vermarktungsform', 'Erfasst am']
+    display_df = df[['id', 'standort', 'stadt', 'eigentuemer', 'vermarktungsform', 'created_at']].copy()
+    display_df.columns = ['ID', 'Standort', 'Stadt', 'Eigentümer', 'Vermarktungsform', 'Erfasst am']
     
     st.dataframe(display_df, hide_index=True)
     

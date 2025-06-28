@@ -162,8 +162,8 @@ else:
     st.write(f"**{len(df)} Standorte** zur finalen Fertigstellung.")
     
     # Vereinfachte Tabelle für die Übersicht
-    display_df = df[['standort', 'stadt', 'vermarktungsform', 'seiten', 'ist_date']].copy()
-    display_df.columns = ['Standort', 'Stadt', 'Vermarktungsform', 'Seiten', 'Fertiggestellt am']
+    display_df = df[['id', 'standort', 'stadt', 'vermarktungsform', 'seiten', 'ist_date']].copy()
+    display_df.columns = ['ID', 'Standort', 'Stadt', 'Vermarktungsform', 'Seiten', 'Fertiggestellt am']
     
     # Datum formatieren
     display_df['Fertiggestellt am'] = pd.to_datetime(display_df['Fertiggestellt am']).dt.strftime('%d.%m.%Y')
