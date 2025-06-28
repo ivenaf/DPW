@@ -571,5 +571,30 @@ try:
 except Exception as e:
     st.error(f"Ein Fehler ist aufgetreten: {str(e)}")
 
+
+
+st.header("Standort löschen")
+
+# Alle IDs und Standorte für Auswahl abrufen (mit aktuellem Filter)
+c.execute(f"SELECT id, standort, stadt FROM locations{query_suffix}", params)
+id_rows = c.fetchall()
+if id_rows:
+    id_options = [f"{row[0]} | {row[1]}, {row[2]}" for row in id_rows]
+    selected_id_str = st.selectbox("Zu löschende Standort-ID auswählen:", id_options)
+    selected_id = selected_id_str.split(" | ")[0]
+
+    if st.button("Standort unwiderruflich löschen", type="primary"):
+        c.execute("DELETE FROM locations WHERE id = ?", (selected_id,))
+        c.execute("DELETE FROM workflow_history WHERE location_id = ?", (selected_id,))
+        conn.commit()
+        st.success(f"Standort mit ID {selected_id} wurde gelöscht.")
+        st.rerun()
+else:
+    st.info("Keine Standorte für Löschung verfügbar.")
+
+
+
+
+
 # Schließe die Datenbankverbindung
 conn.close()

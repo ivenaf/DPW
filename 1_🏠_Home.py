@@ -93,8 +93,8 @@ with col1:
     st.subheader("Inhalt:")
     st.markdown("• Prozessdiagramm") 
     st.markdown("• Dashboard mit Kennzahlen")
-    st.markdown("• Workflow-Navigation")
     st.markdown("• GeoMap")
+    st.markdown("• Workflow-Navigation")
 
 with col2:
     # Bild etwas tiefer platzieren
