@@ -71,7 +71,7 @@ else:
 
 
     st.pydeck_chart(pdk.Deck(
-        map_style='mapbox://styles/mapbox/light-v9',
+        map_style=None,
         initial_view_state=view_state,
         layers=[layer],
         tooltip=tooltip

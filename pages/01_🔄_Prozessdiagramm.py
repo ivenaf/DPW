@@ -18,13 +18,13 @@ G = nx.DiGraph()
 
 # Knoten hinzufügen mit Beschreibungen
 nodes = {
-    'A': {'label': 'Erfassung durch Akquisiteur', 
+    'A': {'label': 'Erfassung Akquisiteur', 
           'desc': 'Standortdaten werden erfasst, inklusive spezifischer Merkmale der Digitalen Säule',
           'color': '#D6EAF8', 'border': '#2E86C1'},
     'B': {'label': 'Leiter Akquisitionsmanagement', 
           'desc': 'Bewertet und genehmigt/lehnt ab',
           'color': '#D6EAF8', 'border': '#2E86C1'},
-    'C': {'label': 'Niederlassungsleiter (übersprungen)', 
+    'C': {'label': 'Niederlassungsleiter', 
           'desc': 'Dieser Schritt wird bei der Digitalen Säule übersprungen oder genehmigt/abgelehnt',
           'color': '#EBF5FB', 'border': '#85C1E9', 'dash': 'dash'},
     'D': {'label': 'Baurecht', 
