@@ -60,3 +60,8 @@ with col2:
         
     if st.button("🔍 Standort-Suche", use_container_width=True):
         st.switch_page("pages/Standort_Suche.py")
+    
+    if st.button("🎫 Open a Ticket", use_container_width=True):
+        st.switch_page("pages/Ticket.py")
+        
+    st.write('*Einige Seiten sind noch in Arbeit oder nicht verfügbar.')

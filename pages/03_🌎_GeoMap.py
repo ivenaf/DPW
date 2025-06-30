@@ -34,11 +34,11 @@ else:
     # Farbe nach Vermarktungsform zuweisen
     df['color'] = df['vermarktungsform'].apply(lambda x: form_colors.get(x, form_colors['default']))
 
-    # PyDeck-View auf Deutschland
+    # PyDeck-View auf NRW (ungefähre Mitte: Düsseldorf)
     view_state = pdk.ViewState(
-        latitude=51.1634,
-        longitude=10.4477,
-        zoom=6,
+        latitude=51.4332,   # Düsseldorf
+        longitude=7.6616,   # ca. Mitte NRW
+        zoom=8,             # Zoom auf NRW
         pitch=0
     )
 
@@ -68,7 +68,6 @@ else:
             "color": "black"
         }
     }
-
 
     st.pydeck_chart(pdk.Deck(
         map_style=None,
