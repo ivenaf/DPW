@@ -18,14 +18,14 @@ G = nx.DiGraph()
 
 # Knoten hinzufügen mit Beschreibungen
 nodes = {
-    'A': {'label': 'Erfassung', 
-          'desc': 'Standortdaten werden erfasst, inklusive spezifischer Merkmale der Digitalen Säule. Email wird an Leiter Akquisitionsmanagement gesendet.',
+    'A': {'label': 'Erfassung Akquisiteur', 
+          'desc': 'Standortdaten werden erfasst, inklusive spezifischer Merkmale der Digitalen Säule',
           'color': '#D6EAF8', 'border': '#2E86C1'},
     'B': {'label': 'Leiter Akquisitionsmanagement', 
           'desc': 'Bewertet und genehmigt/lehnt ab',
           'color': '#D6EAF8', 'border': '#2E86C1'},
     'C': {'label': 'Niederlassungsleiter', 
-          'desc': 'Dieser Schritt wird bei der Digitalen Säule übersprungen',
+          'desc': 'Dieser Schritt wird bei der Digitalen Säule übersprungen oder genehmigt/abgelehnt',
           'color': '#EBF5FB', 'border': '#85C1E9', 'dash': 'dash'},
     'D': {'label': 'Baurecht', 
           'desc': 'Bauanträge werden bei der Stadt eingereicht',
@@ -82,7 +82,7 @@ edges = [
     ('E1', 'X3', {'label': 'Misserfolg', 'color': '#E74C3C', 'width': 1.5}),
     ('F', 'G', {'label': 'Genehmigung', 'color': '#27AE60', 'width': 1.5}),
     ('F', 'X4', {'label': 'Ablehnung', 'color': '#E74C3C', 'width': 1.5}),
-    ('G', 'H', {'label': '', 'color': '#27AE60', 'width': 1.5}),
+    ('G', 'H', {'label': 'Aufbau + Stromanschluss', 'color': '#27AE60', 'width': 1.5}),
 ]
 
 for source, target, attrs in edges:
